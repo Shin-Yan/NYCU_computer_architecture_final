@@ -20,6 +20,14 @@ void InitMatrix(Matrix* matrix, int rows, int cols)
 
 }
 
+void generateRandomMatrix(Matrix* matrix){
+    for(int i = 0 ; i < matrix->rows_ ; ++i){
+        for(int j = 0 ; j < matrix->cols_; ++j){
+            matrix->mat[i][j] = (double)rand() / (double)RAND_MAX;
+        }
+    }
+}
+
 void MatrixFree(Matrix* matrix){
     for(int i = 0; i <matrix->rows_ ; ++i){
         free(matrix->mat[i]);
