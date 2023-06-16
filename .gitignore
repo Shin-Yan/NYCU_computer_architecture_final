@@ -1,2 +1,3 @@
 *.o
 cpu_version
+gpu_version

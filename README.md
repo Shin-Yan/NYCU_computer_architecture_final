@@ -12,6 +12,7 @@ $ make
 Execution:
 ```
 $ ./cpu_version
+$ ./gpu_version
 ```
 
 ## topic: Back propagation matrix operation with cuda

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "matrix_cpu.h"
+#include "matrix_gpu.h"
 
 int main(){
     Matrix *m1 = InitMatrix(10,1000000), *m2 = InitMatrix(1000000, 4), *m;

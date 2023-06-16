@@ -1,16 +1,26 @@
 CC = gcc
-TARGET = cpu_version
-all: TARGET
+NVCC = nvcc
+TARGET = cpu_version gpu_version
+all: $(TARGET)
 
-TARGET: main.o matrix_cpu.o
-	gcc -o $(TARGET) main.o matrix_cpu.o
+cpu_version: main.o matrix_cpu.o 
+	$(CC) -o cpu_version main.o matrix_cpu.o
+
+gpu_version: main_gpu.o matrix_gpu.o
+	$(NVCC) -o gpu_version main_gpu.o matrix_gpu.o
 
 main.o: main.c
-	gcc -c main.c
+	$(CC) -c main.c -I .
 
-matrix.o: matrix_cpu.c
-	gcc -c matrix_cpu.c
+main_gpu.o: main_gpu.cu
+	$(NVCC) -c main_gpu.cu -I .
+
+matrix_cpu.o: matrix_cpu.c
+	$(CC) -c matrix_cpu.c -I .
+
+matrix_gpu.o: matrix_gpu.cu
+	$(NVCC) -c matrix_gpu.cu -I .
 
 .PHONY: clean
 clean:
-	rm -rf main.o matrix_cpu.o cpu_version
+	rm -rf main.o matrix_cpu.o cpu_version matrix_gpu.o gpu_version
