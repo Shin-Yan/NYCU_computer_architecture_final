@@ -9,6 +9,11 @@ Compile:
 $ make
 ```
 
+Execution:
+```
+$ ./cpu_version
+```
+
 ## topic: Back propagation matrix operation with cuda
 
 ## Environment
