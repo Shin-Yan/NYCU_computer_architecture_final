@@ -2,9 +2,10 @@
  * matrix.c
  */
 
-#include "matrix.h"
+#include "matrix_cpu.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 Matrix* InitMatrix(int rows, int cols)
 {
@@ -54,23 +55,6 @@ void dumpMatrix(Matrix* matrix){
     }
 }
 
-double innerProudct(double* vec1, double* vec2, int size){
-
-    double ret;
-    for(int i = 0 ; i < size ; ++i){
-        ret += vec1[i] * vec2[i];
-    }
-    return ret;
-}
-
-double* vectorAddition(double* vec1, double* vec2, int size){
-    double *ret = (double*)malloc(size * sizeof(double));
-    for(int i = 0 ; i < size ; ++i){
-        ret[i] = vec1[i] + vec2[i];
-    }
-    return ret;
-}
-
 Matrix* transpose(Matrix* matrix){
     Matrix* new_mat = (Matrix*)malloc(sizeof(Matrix));
     new_mat->rows_ = matrix->cols_;
@@ -97,10 +81,17 @@ Matrix* matrixMultiply(Matrix* matrix1, Matrix* matrix2){
     allocSpace(new_mat);
 
     Matrix* matrix2_trans = transpose(matrix2);
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
     for(int i = 0 ; i < new_mat->rows_ ; ++i){
         for(int j = 0 ; j < new_mat->cols_ ; ++j){
-            new_mat->mat[i][j] = innerProudct(matrix1->mat[i], matrix2_trans->mat[j], matrix1->cols_);
+            for(int k = 0 ; k < matrix1->cols_ ; ++k)
+                new_mat->mat[i][j] += matrix1->mat[i][k]*matrix2->mat[k][j];
         }
     }
+    gettimeofday(&end, NULL);
+    long seconds = (end.tv_sec - start.tv_sec);
+    long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
+    printf("Time elapsed is %ld milliseconds\n", micros / 1000);
     return new_mat;
 }

@@ -3,7 +3,7 @@
 #include "matrix_cpu.h"
 
 int main(){
-    Matrix *m1 = InitMatrix(10,100000), *m2 = InitMatrix(100000, 4), *m;
+    Matrix *m1 = InitMatrix(2,3), *m2 = InitMatrix(3, 4), *m;
     generateRandomMatrix(m1);
     generateRandomMatrix(m2);
     // dumpMatrix(m1);
