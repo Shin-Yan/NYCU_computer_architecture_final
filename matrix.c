@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void InitMatrix(Matrix* matrix, int rows, int cols)
+Matrix* InitMatrix(int rows, int cols)
 {
+    Matrix *matrix = (Matrix*)malloc(sizeof(Matrix));
     matrix->rows_ = rows;
     matrix->cols_ = cols;
     allocSpace(matrix);
@@ -17,7 +18,7 @@ void InitMatrix(Matrix* matrix, int rows, int cols)
             matrix->mat[i][j] = 0;
         }
     }
-
+    return matrix;
 }
 
 void generateRandomMatrix(Matrix* matrix){
@@ -44,10 +45,62 @@ void allocSpace(Matrix* matrix){
 }
 
 void dumpMatrix(Matrix* matrix){
+
     for(int i = 0 ; i < matrix->rows_ ; ++i){
         for(int j = 0 ; j < matrix->cols_; ++j){
             printf("%lf ", matrix->mat[i][j]);
         }
         printf("\n");
     }
+}
+
+double innerProudct(double* vec1, double* vec2, int size){
+
+    double ret;
+    for(int i = 0 ; i < size ; ++i){
+        ret += vec1[i] * vec2[i];
+    }
+    return ret;
+}
+
+double* vectorAddition(double* vec1, double* vec2, int size){
+    double *ret = (double*)malloc(size * sizeof(double));
+    for(int i = 0 ; i < size ; ++i){
+        ret[i] = vec1[i] + vec2[i];
+    }
+    return ret;
+}
+
+Matrix* transpose(Matrix* matrix){
+    Matrix* new_mat = (Matrix*)malloc(sizeof(Matrix));
+    new_mat->rows_ = matrix->cols_;
+    new_mat->cols_ = matrix->rows_;
+    allocSpace(new_mat); 
+    for(int i = 0 ; i < matrix->rows_ ; ++i){
+        for(int j = 0 ; j < matrix->cols_; ++j){
+            new_mat->mat[j][i] = matrix->mat[i][j];
+        }
+    }
+    return new_mat;
+}
+
+Matrix* matrixMultiply(Matrix* matrix1, Matrix* matrix2){
+
+    if(matrix1->cols_ != matrix2->rows_){
+        printf("matrix1 cols doesn't match matrix2 rows\n");
+        return NULL;
+    }
+
+    Matrix* new_mat = (Matrix*)malloc(sizeof(Matrix));
+    new_mat->rows_ = matrix1->rows_;
+    new_mat->cols_ = matrix2->cols_;
+    allocSpace(new_mat);
+
+    Matrix* matrix2_trans = transpose(matrix2);
+    for(int i = 0 ; i < new_mat->rows_ ; ++i){
+        for(int j = 0 ; j < new_mat->cols_ ; ++j){
+            new_mat->mat[i][j] = innerProudct(matrix1->mat[i], matrix2_trans->mat[j], matrix1->cols_);
+        }
+    }
+    return new_mat;
 }
