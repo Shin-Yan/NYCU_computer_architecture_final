@@ -6,7 +6,7 @@
 #define __MATRIX_CPU_H__
 
 #include <stdio.h>
-
+#include "parameters.h"
 typedef struct Matrix{
     double *mat;
     int rows_, cols_;
@@ -17,6 +17,7 @@ void generateRandomMatrix(Matrix* matrix);
 void generateRandomVector(double* vec, int size);
 void MatrixFree(Matrix* matrix);
 void allocSpace(Matrix* matrix);
+void dumpIndex(IndexSave* Ind, Matrix* new_mat);
 void dumpMatrix(Matrix* matrix);
 void dumpVector(double* vec, int size);
 double innerProduct(double *vec1, double *vec2, int n);
