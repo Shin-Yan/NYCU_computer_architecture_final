@@ -4,7 +4,7 @@ TARGET = cpu_version gpu_version
 all: $(TARGET)
 
 cpu_version: main.o matrix_cpu.o 
-	$(CC) -o cpu_version main.o matrix_cpu.o
+	$(CC) -o cpu_version main.o matrix_cpu.o -lm
 
 gpu_version: main_gpu.o matrix_gpu.o
 	$(NVCC) -o gpu_version main_gpu.o matrix_gpu.o

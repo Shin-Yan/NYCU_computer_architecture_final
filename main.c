@@ -3,8 +3,10 @@
 #include "matrix_cpu.h"
 
 int main(){
-    Matrix *m1 = InitMatrix(10,1000000), *m2 = InitMatrix(1000000, 4), *m;
-    double* bias = (double*)malloc(sizeof(double) * 10);
+    Matrix *m1 = InitMatrix(256,128), *m2 = InitMatrix(128, 64), *m;
+    double* bias = (double*)malloc(sizeof(double) * 256);
+    generateRandomVector(bias,2);
+    // dumpVector(bias, 2);
     generateRandomMatrix(m1);
     generateRandomMatrix(m2);
     // dumpMatrix(m1);

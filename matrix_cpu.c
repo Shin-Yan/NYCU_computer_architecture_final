@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <math.h>
 
 Matrix* InitMatrix(int rows, int cols)
 {
@@ -16,49 +17,55 @@ Matrix* InitMatrix(int rows, int cols)
 
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            matrix->mat[i][j] = 0;
+            matrix->mat[i*cols+j] = 0;
         }
     }
     return matrix;
 }
 
 void generateRandomMatrix(Matrix* matrix){
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        for(int j = 0 ; j < matrix->cols_; ++j){
-            matrix->mat[i][j] = (double)rand() / (double)RAND_MAX;
+    int rows = matrix->rows_;
+    int cols = matrix->cols_;
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols ; ++j){
+            // int value = (double)rand()/(double)RAND_MAX *10;
+            matrix->mat[i*cols+j] = (double)rand()/(double)RAND_MAX;
         }
     }
 }
 
 void generateRandomVector(double* vec, int size){
     for(int i = 0 ; i < size ; i++){
-        vec[i] = (double)rand() / (double)RAND_MAX;
+        // int value = (double)rand()/(double)RAND_MAX *10;
+        vec[i] = (double)rand()/(double)RAND_MAX;
     }
 }
 
 void MatrixFree(Matrix* matrix){
-    for(int i = 0; i <matrix->rows_ ; ++i){
-        free(matrix->mat[i]);
-    }
     free(matrix->mat);
     free(matrix);
 }
 
 void allocSpace(Matrix* matrix){
-    matrix->mat = (double**)malloc(matrix->rows_*sizeof(double*));
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        matrix->mat[i] =  (double*)malloc(matrix->cols_*sizeof(double));
-    }
+    matrix->mat = (double*)malloc(matrix->rows_ * matrix->cols_ *sizeof(double*));
 }
 
 void dumpMatrix(Matrix* matrix){
-
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        for(int j = 0 ; j < matrix->cols_; ++j){
-            printf("%lf ", matrix->mat[i][j]);
+    int rows = matrix->rows_;
+    int cols = matrix->cols_;
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols ; ++j){
+            printf("%lf ", matrix->mat[i*cols+j]);
         }
         printf("\n");
     }
+}
+
+void dumpVector(double* vec, int size){
+    for(int i = 0 ; i < size ; i ++){
+        printf("%lf ", vec[i]);
+    }
+    printf("\n");
 }
 
 double innerProduct(double *vec1, double *vec2, int n){
@@ -85,12 +92,12 @@ double* substractVector(double *vec1, double *vec2, int n){
 
 Matrix* transpose(Matrix* matrix){
     Matrix* new_mat = (Matrix*)malloc(sizeof(Matrix));
-    new_mat->rows_ = matrix->cols_;
-    new_mat->cols_ = matrix->rows_;
+    int cols = new_mat->rows_ = matrix->cols_;
+    int rows = new_mat->cols_ = matrix->rows_;
     allocSpace(new_mat); 
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        for(int j = 0 ; j < matrix->cols_; ++j){
-            new_mat->mat[j][i] = matrix->mat[i][j];
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols; ++j){
+            new_mat->mat[j*rows+i] = matrix->mat[i*cols+j];
         }
     }
     return new_mat;
@@ -111,10 +118,15 @@ Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double
     // Matrix* matrix2_trans = transpose(matrix2);
     struct timeval start, end;
     gettimeofday(&start, NULL);
-    for(int i = 0 ; i < new_mat->rows_ ; ++i){
-        for(int j = 0 ; j < new_mat->cols_ ; ++j){
-            for(int k = 0 ; k < matrix1->cols_ ; ++k)
-                new_mat->mat[i][j] += matrix1->mat[i][k]*matrix2->mat[k][j] + bias[i];
+    int rows = new_mat->rows_;
+    int cols = new_mat->cols_;
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols ; ++j){
+            for(int k = 0 ; k < matrix1->cols_ ; ++k){
+                new_mat->mat[i*cols+j] += matrix1->mat[i*matrix1->cols_+k]*matrix2->mat[k*matrix2->cols_ + j];
+            }
+            new_mat->mat[i*cols+j] += bias[i];
+            new_mat->mat[i*cols+j] = 1.0 / (1.0 + exp(-new_mat->mat[i*cols+j]));
         }
     }
     gettimeofday(&end, NULL);

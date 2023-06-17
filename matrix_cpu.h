@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 typedef struct Matrix{
-    double **mat;
+    double *mat;
     int rows_, cols_;
 } Matrix;
 
@@ -18,6 +18,7 @@ void generateRandomVector(double* vec, int size);
 void MatrixFree(Matrix* matrix);
 void allocSpace(Matrix* matrix);
 void dumpMatrix(Matrix* matrix);
+void dumpVector(double* vec, int size);
 double innerProduct(double *vec1, double *vec2, int n);
 double* addVector(double *vec1, double *vec2, int n);
 double* substractVector(double *vec1, double *vec2, int n);

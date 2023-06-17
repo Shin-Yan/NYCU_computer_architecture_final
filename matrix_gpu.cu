@@ -9,20 +9,17 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-__global__ void cudaMatrixMuladdBias(double* new_mat, double* m1, double* m2, int n, 
-                                    int m, int p, size_t p_1, size_t p_2, size_t p_new){
-        int x = threadIdx.x + blockIdx.x* blockDim.x;
-        int y = threadIdx.y + blockIdx.y* blockDim.y;
-
-        if(x < p && y < n){
-            double sum = 0;
-            for(int k = 0 ; k < m ;++k){
-                double* row1 = (double*)((char*)m1 + y * p_1);
-                double* row2 = (double*)((char*)m2 + k * p_2);
-                sum += row1[k] * row2[x];
+__global__ void cudaMatrixMuladdBias(double* new_mat, double* m1, double* m2, double* bias, int m, 
+                                    int n, int p){
+        int stripe = blockDim.x*gridDim.x;
+        int head = (blockIdx.x*blockDim.x + threadIdx.x);
+        for(int i = head ; i < m ; i+=stripe){
+            for(int k = 0 ; k < p ; ++k){
+                for(int j = 0 ; j < n ; ++j)
+                {
+                    new_mat[i*p+k] += m1[i*n+j]*m2[j*p+k];
+                } 
             }
-            double *row_new = (double*)((char*)new_mat + y * p_new);
-            row_new[x] = sum;
         }
 }
 
@@ -35,49 +32,55 @@ Matrix* InitMatrix(int rows, int cols)
 
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            matrix->mat[i][j] = 0;
+            matrix->mat[i*cols+j] = 0;
         }
     }
     return matrix;
 }
 
 void generateRandomMatrix(Matrix* matrix){
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        for(int j = 0 ; j < matrix->cols_; ++j){
-            matrix->mat[i][j] = (double)rand() / (double)RAND_MAX;
+    int rows = matrix->rows_;
+    int cols = matrix->cols_;
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols ; ++j){
+            int value = (double)rand()/(double)RAND_MAX *10;
+            matrix->mat[i*cols+j] = value;
         }
     }
 }
 
 void generateRandomVector(double* vec, int size){
     for(int i = 0 ; i < size ; i++){
-        vec[i] = (double)rand() / (double)RAND_MAX;
+        int value = (double)rand()/(double)RAND_MAX *10;
+        vec[i] = value;
     }
 }
 
 void MatrixFree(Matrix* matrix){
-    for(int i = 0; i <matrix->rows_ ; ++i){
-        free(matrix->mat[i]);
-    }
     free(matrix->mat);
     free(matrix);
 }
 
 void allocSpace(Matrix* matrix){
-    matrix->mat = (double**)malloc(matrix->rows_*sizeof(double*));
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        matrix->mat[i] =  (double*)malloc(matrix->cols_*sizeof(double));
-    }
+    matrix->mat = (double*)malloc(matrix->rows_ * matrix->cols_ *sizeof(double*));
 }
 
 void dumpMatrix(Matrix* matrix){
-
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        for(int j = 0 ; j < matrix->cols_; ++j){
-            printf("%lf ", matrix->mat[i][j]);
+    int rows = matrix->rows_;
+    int cols = matrix->cols_;
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols ; ++j){
+            printf("%lf ", matrix->mat[i*cols+j]);
         }
         printf("\n");
     }
+}
+
+void dumpVector(double* vec, int size){
+    for(int i = 0 ; i < size ; i ++){
+        printf("%lf ", vec[i]);
+    }
+    printf("\n");
 }
 
 double innerProduct(double *vec1, double *vec2, int n){
@@ -106,12 +109,12 @@ double* substractVector(double *vec1, double *vec2, int n){
 
 Matrix* transpose(Matrix* matrix){
     Matrix* new_mat = (Matrix*)malloc(sizeof(Matrix));
-    new_mat->rows_ = matrix->cols_;
-    new_mat->cols_ = matrix->rows_;
+    int cols = new_mat->rows_ = matrix->cols_;
+    int rows = new_mat->cols_ = matrix->rows_;
     allocSpace(new_mat); 
-    for(int i = 0 ; i < matrix->rows_ ; ++i){
-        for(int j = 0 ; j < matrix->cols_; ++j){
-            new_mat->mat[j][i] = matrix->mat[i][j];
+    for(int i = 0 ; i < rows ; ++i){
+        for(int j = 0 ; j < cols; ++j){
+            new_mat->mat[j*rows+i] = matrix->mat[i*cols+j];
         }
     }
     return new_mat;
@@ -133,26 +136,31 @@ Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double
     cudaEvent_t start, stop;
     cudaEventCreate (&start);
     cudaEventCreate (&stop);
+    cudaEventRecord(start, 0);
 
     // allocate memory space on device
     double *device_new, *device_matrix1, *device_matrix2, *device_bias;
-    size_t pitch_new, pitch_matrix1, pitch_matrix2;
-    size_t size_new = new_mat->cols_ * sizeof(double);
-    size_t size_matrix1 = matrix1->cols_ * sizeof(double);
-    size_t size_matrix2 = matrix2->cols_ * sizeof(double);
-    cudaMallocPitch((void **)&device_new, &pitch_new, size_new, new_mat->rows_);
-    cudaMallocPitch((void **)&device_matrix1, &pitch_matrix1, size_matrix1, matrix1->rows_);
-    cudaMallocPitch((void **)&device_matrix2, &pitch_matrix2, size_matrix2, matrix2->rows_);
+    
+    cudaMalloc((void **)&device_new, sizeof(double) * new_mat->rows_ * new_mat->cols_);
+    cudaMalloc((void **)&device_matrix1, sizeof(double) * matrix1->rows_ * matrix1->cols_);
+    cudaMalloc((void **)&device_matrix2, sizeof(double) * matrix2->rows_ * matrix2->cols_);
     cudaMalloc((void **)&device_bias, sizeof(double) * new_mat->rows_);
 
-    // call kernel function
-    dim3 dimBlock(16,16);
-    dim3 dimGrid((new_mat->cols_ + dimBlock.x - 1) / dimBlock.x, (new_mat->rows_ + dimBlock.y - 1) / dimBlock.y);
-    cudaMatrixMuladdBias<<<dimGrid, dimBlock>>>(device_new, device_matrix1, device_matrix2, matrix1->rows_, matrix1->cols_, 
-                                                matrix2->cols_, pitch_matrix1, pitch_matrix2, pitch_new);
-    // copy result nack to host
-    cudaMemcpy2D(new_mat->mat, size_new, device_new, pitch_new, size_new, new_mat->rows_, cudaMemcpyDeviceToHost);
+    // copy data from host to device
+    cudaMemcpy(device_new, new_mat->mat, sizeof(double)* new_mat->cols_ * new_mat->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_matrix1, matrix1->mat, sizeof(double)* matrix1->cols_ * matrix1->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_matrix2, matrix2->mat, sizeof(double)* matrix2->cols_ * matrix2->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_bias, bias, sizeof(double) * matrix1->rows_, cudaMemcpyHostToDevice);
 
+    // call kernel function
+    dim3 dimGrid(1);
+    dim3 dimBlock(2);
+    
+    cudaMatrixMuladdBias<<<dimGrid, dimBlock>>>(device_new, device_matrix1, device_matrix2, bias, matrix1->rows_, matrix1->cols_, 
+                                                matrix2->cols_);
+    // copy result back to host
+    cudaMemcpy(new_mat->mat, device_new, sizeof(double)* new_mat->rows_ * new_mat->cols_, cudaMemcpyDeviceToHost);
+    
     // release memory space on device
     cudaFree(device_matrix1);
     cudaFree(device_matrix2);
@@ -160,9 +168,13 @@ Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double
     cudaFree(device_bias);
 
     // Calculate Elapsed Time
-  	float elapsedTime; 
-  	cudaEventElapsedTime(&elapsedTime, start, stop);
+    float elapsedTime; 
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&elapsedTime, start, stop);
     printf("Time elapsed is %5.2f ms\n", elapsedTime);
-
+    
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
     return new_mat;
 }
