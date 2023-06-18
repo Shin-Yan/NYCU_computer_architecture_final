@@ -26,7 +26,7 @@ __global__ void cudaMatrixMuladdBias(type_m* new_mat, type_m* m1, type_m* m2, ty
             int idx2 = i % p;
             for(int j = 0 ; j < n ; ++j)
             {
-                new_mat[i] += m1[idx1*n+j]*m2[j*p+idx2];
+                new_mat[i] += m1[idx1*n+j]*m2[idx2*n+j];
             }
             new_mat[i] += bias[idx1]; 
             new_mat[i] = 1.0 / (1.0 + exp(-new_mat[i]));
@@ -176,6 +176,7 @@ Matrix* matrixMultiplyAddBias_gpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
 
     Matrix* new_mat = InitMatrix(matrix1->rows_, matrix2->cols_);
     // IndSave 
+    Matrix* matrix2_t = transpose(matrix2);
 
     IndexSave* dInd;
     // create time event
@@ -195,14 +196,14 @@ Matrix* matrixMultiplyAddBias_gpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
     // copy data from host to device
     cudaMemcpy(device_new, new_mat->mat, sizeof(type_m)* new_mat->cols_ * new_mat->rows_, cudaMemcpyHostToDevice);
     cudaMemcpy(device_matrix1, matrix1->mat, sizeof(type_m)* matrix1->cols_ * matrix1->rows_, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_matrix2, matrix2->mat, sizeof(type_m)* matrix2->cols_ * matrix2->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_matrix2, matrix2_t->mat, sizeof(type_m)* matrix2_t->cols_ * matrix2_t->rows_, cudaMemcpyHostToDevice);
     cudaMemcpy(device_bias, bias, sizeof(type_m) * matrix1->rows_, cudaMemcpyHostToDevice);
     // start timer
     cudaEventRecord(start, 0);
 
     // call kernel function
-    dim3 dimGrid(4);
-    dim3 dimBlock(32);
+    dim3 dimGrid(GRID);
+    dim3 dimBlock(BLOCK);
     
     cudaMatrixMuladdBias<<<dimGrid, dimBlock>>>(device_new, device_matrix1, device_matrix2, device_bias, dInd, matrix1->rows_, matrix1->cols_, 
     		    matrix2->cols_);
@@ -228,6 +229,7 @@ Matrix* matrixMultiplyAddBias_gpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
     
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
+    MatrixFree(matrix2_t);
     return new_mat;
 }
 
@@ -240,7 +242,7 @@ Matrix* matrixMultiplyAddBias_cpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
 
     Matrix* new_mat = InitMatrix(matrix1->rows_, matrix2->cols_);
 
-    // Matrix* matrix2_trans = transpose(matrix2);
+    Matrix* matrix2_t = transpose(matrix2);
     // struct timeval start, end;
     // gettimeofday(&start, NULL);
     int rows = new_mat->rows_;
@@ -248,7 +250,7 @@ Matrix* matrixMultiplyAddBias_cpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
             for(int k = 0 ; k < matrix1->cols_ ; ++k){
-                new_mat->mat[i*cols+j] += matrix1->mat[i*matrix1->cols_+k]*matrix2->mat[k*matrix2->cols_ + j];
+                new_mat->mat[i*cols+j] += matrix1->mat[i*matrix1->cols_+k]*matrix2_t->mat[j*matrix2_t->cols_+k];
             }
             new_mat->mat[i*cols+j] += bias[i];
             new_mat->mat[i*cols+j] = 1.0 / (1.0 + exp(-new_mat->mat[i*cols+j]));
@@ -258,5 +260,6 @@ Matrix* matrixMultiplyAddBias_cpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
     // long seconds = (end.tv_sec - start.tv_sec);
     // long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
     // printf("CPU Time elapsed is %5.2f ms\n", (int)micros / 1000);
+    MatrixFree(matrix2_t);
     return new_mat;
 }

@@ -8,11 +8,13 @@
 #include <stdio.h>
 #include "parameters.h"
 
-#define MAT1ROWS 32
+#define MAT1ROWS 128
 #define MAT12 4
-#define MAT2COLS 16
+#define MAT2COLS 128
 #define type_m float 
 #define expr_m "%f " 
+#define GRID 4
+#define BLOCK 128
 
 typedef struct Matrix{
     type_m *mat;

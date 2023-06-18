@@ -3,14 +3,11 @@ NVCC = nvcc
 LINKER_DIR = -L/usr/local/cuda/lib
 OCELOT=`OcelotConfig -l`
 CUDA_ARCH = -arch=sm_20
-# TODO: add gpu_version1
 TARGET = gpu_version1 gpu_version2
+
 all: $(TARGET)
 
-# TODO: add gpu_vm1
 vm: gpu_vm1 gpu_vm2
-
-# TODO: uncomment below lines, before that, please implement main_gpu1.cu, matrix_gpu1.cu and matrix_gpu1.h
 
 gpu_version1: main_gpu1.o matrix_gpu1.o
 	$(NVCC) -o gpu_version1 main_gpu1.o matrix_gpu1.o
@@ -49,6 +46,5 @@ matrix_gpu_vm2.o: matrix_gpu2.cu
 	$(NVCC) -c matrix_gpu2.cu $(CUDA_ARCH) -I . -o matrix_gpu_vm2.o
 
 .PHONY: clean
-# TODO: add gpu_version1 gpu_vm1
 clean:
 	rm -rf *.o gpu_version1 gpu_version2 gpu_vm1 gpu_vm2
