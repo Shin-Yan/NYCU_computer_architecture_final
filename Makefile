@@ -3,40 +3,52 @@ NVCC = nvcc
 LINKER_DIR = -L/usr/local/cuda/lib
 OCELOT=`OcelotConfig -l`
 CUDA_ARCH = -arch=sm_20
-TARGET = cpu_version gpu_version
+# TODO: add gpu_version1
+TARGET = gpu_version2
 all: $(TARGET)
-vm: cpu_vm gpu_vm
 
-cpu_version: main.o matrix_cpu.o 
-	$(CC) -o cpu_version main.o matrix_cpu.o -lm -std=c99
+# TODO: add gpu_vm1
+vm: gpu_vm2
 
-gpu_version: main_gpu.o matrix_gpu.o
-	$(NVCC) -o gpu_version main_gpu.o matrix_gpu.o
+# TODO: uncomment below lines, before that, please implement main_gpu1.cu, matrix_gpu1.cu and matrix_gpu1.h
 
-main.o: main.c
-	$(CC) -c main.c -I . -std=c99
+# gpu_version1: main_gpu1.o matrix_gpu1.o
+# 	$(NVCC) -o gpu_version1 main_gpu1.o matrix_gpu1.o
 
-main_gpu.o: main_gpu.cu
-	$(NVCC) -c main_gpu.cu -I .
+# main_gpu1.o: main_gpu1.cu
+# 	$(NVCC) -c main_gpu1.cu -I .
 
-matrix_cpu.o: matrix_cpu.c
-	$(CC) -c matrix_cpu.c -I . -std=c99
+# matrix_gpu1.o: matrix_gpu1.cu
+# 	$(NVCC) -c matrix_gpu1.cu -I .
 
-matrix_gpu.o: matrix_gpu.cu
-	$(NVCC) -c matrix_gpu.cu -I .
+# gpu_vm1: main_gpu_vm1.o matrix_gpu_vm1.o
+# 	$(CC) -o gpu_vm1 main_gpu_vm1.o matrix_gpu_vm1.o $(LINKER_DIR) $(OCELOT)
 
-cpu_vm: main.o matrix_cpu.o
-	$(CC) -o cpu_vm main.o matrix_cpu.o -lm -std=c99
+# main_gpu_vm1.o: main_gpu1.cu
+# 	$(NVCC) -c main_gpu1.cu $(CUDA_ARCH) -I . -o main_gpu_vm1.o
 
-gpu_vm: main_gpu_vm.o matrix_gpu_vm.o
-	$(CC) -o gpu_vm main_gpu_vm.o matrix_gpu_vm.o $(LINKER_DIR) $(OCELOT)
+# matrix_gpu_vm1.o: matrix_gpu1.cu
+# 	$(NVCC) -c matrix_gpu1.cu $(CUDA_ARCH) -I . -o matrix_gpu_vm1.o
 
-main_gpu_vm.o: main_gpu.cu
-	$(NVCC) -c main_gpu.cu $(CUDA_ARCH) -I . -o main_gpu_vm.o
+gpu_version2: main_gpu2.o matrix_gpu2.o
+	$(NVCC) -o gpu_version2 main_gpu2.o matrix_gpu2.o
 
-matrix_gpu_vm.o: matrix_gpu.cu
-	$(NVCC) -c matrix_gpu.cu $(CUDA_ARCH) -I . -o matrix_gpu_vm.o
+main_gpu2.o: main_gpu2.cu
+	$(NVCC) -c main_gpu2.cu -I .
+
+matrix_gpu2.o: matrix_gpu2.cu
+	$(NVCC) -c matrix_gpu2.cu -I .
+
+gpu_vm2: main_gpu_vm2.o matrix_gpu_vm2.o
+	$(CC) -o gpu_vm2 main_gpu_vm2.o matrix_gpu_vm2.o $(LINKER_DIR) $(OCELOT)
+
+main_gpu_vm2.o: main_gpu2.cu
+	$(NVCC) -c main_gpu2.cu $(CUDA_ARCH) -I . -o main_gpu_vm2.o
+
+matrix_gpu_vm2.o: matrix_gpu2.cu
+	$(NVCC) -c matrix_gpu2.cu $(CUDA_ARCH) -I . -o matrix_gpu_vm2.o
 
 .PHONY: clean
+# TODO: add gpu_version1 gpu_vm1
 clean:
-	rm -rf *.o cpu_version gpu_version cpu_vm gpu_vm
+	rm -rf *.o gpu_version2 gpu_vm2

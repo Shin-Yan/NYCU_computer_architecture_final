@@ -13,15 +13,13 @@ $ make
 $ make vm
 ```
 
-Execution:
+Execution: Note that gpu_version2 is just for debugging on your computer, it can't actually access the CUDA device.
 ```
 // In developing mode
-$ ./cpu_version
-$ ./gpu_version
+$ ./gpu_version2
 
 // In Virtual Machine
-$ ./cpu_vm
-$ ./gpu_vm
+$ ./gpu_vm2
 ```
 
 ## topic: Forward propagation matrix multiplication with cuda
