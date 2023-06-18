@@ -16,9 +16,11 @@ $ make vm
 Execution: Note that gpu_version2 is just for debugging on your computer, it can't actually access the CUDA device.
 ```
 // In developing mode
+$ ./gpu_version1
 $ ./gpu_version2
 
 // In Virtual Machine
+$ ./gpu_vm1
 $ ./gpu_vm2
 ```
 
