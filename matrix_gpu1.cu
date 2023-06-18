@@ -13,10 +13,11 @@
 
 __global__ void cudaMatrixMuladdBias(type_m* new_mat, type_m* m1, type_m* m2, type_m* bias, IndexSave* ind, int m, 
                                     int n, int p){
-        int stripe = blockDim.x*gridDim.x;
-        int head = (blockIdx.x*blockDim.x + threadIdx.x);
-        int LoopLim = m * p;
-        for(int i = head ; i < LoopLim ; i+=stripe){
+        int TotalThread = blockDim.x*gridDim.x;
+        int stripe = (m*p)/TotalThread;
+        int head = (blockIdx.x*blockDim.x + threadIdx.x)*stripe;
+        int LoopLim = head+stripe;
+        for(int i = head ; i < LoopLim ; ++i){
             ind[i].blockInd_x = blockIdx.x;
             ind[i].threadInd_x = threadIdx.x;
             ind[i].head = head;
