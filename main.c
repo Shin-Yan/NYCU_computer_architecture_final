@@ -3,9 +3,9 @@
 #include "matrix_cpu.h"
 
 int main(){
-    Matrix *m1 = InitMatrix(256,128), *m2 = InitMatrix(128, 64), *m;
-    double* bias = (double*)malloc(sizeof(double) * 256);
-    generateRandomVector(bias,2);
+    Matrix *m1 = InitMatrix(10,20), *m2 = InitMatrix(20, 10), *m;
+    float* bias = (float*)malloc(sizeof(float) * 10);
+    generateRandomVector(bias,10);
     // dumpVector(bias, 2);
     generateRandomMatrix(m1);
     generateRandomMatrix(m2);

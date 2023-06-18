@@ -8,23 +8,23 @@
 #include <stdio.h>
 #include "parameters.h"
 typedef struct Matrix{
-    double *mat;
+    float *mat;
     int rows_, cols_;
 } Matrix;
 
 Matrix* InitMatrix(int rows, int cols);
 void generateRandomMatrix(Matrix* matrix);
-void generateRandomVector(double* vec, int size);
+void generateRandomVector(float* vec, int size);
 void MatrixFree(Matrix* matrix);
 void allocSpace(Matrix* matrix);
 void dumpIndex(IndexSave* Ind, Matrix* new_mat);
 void dumpMatrix(Matrix* matrix);
-void dumpVector(double* vec, int size);
-double innerProduct(double *vec1, double *vec2, int n);
-double* addVector(double *vec1, double *vec2, int n);
-double* substractVector(double *vec1, double *vec2, int n);
+void dumpVector(float* vec, int size);
+float innerProduct(float *vec1, float *vec2, int n);
+float* addVector(float *vec1, float *vec2, int n);
+float* substractVector(float *vec1, float *vec2, int n);
 
 Matrix* transpose(Matrix* matrix);
-Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double* bias);
+Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, float* bias);
 
 #endif

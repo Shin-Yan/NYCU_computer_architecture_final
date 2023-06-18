@@ -10,20 +10,21 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-__global__ void cudaMatrixMuladdBias(double* new_mat, double* m1, double* m2, double* bias, IndexSave* ind, int m, 
+__global__ void cudaMatrixMuladdBias(float* new_mat, float* m1, float* m2, float* bias, IndexSave* ind, int m, 
                                     int n, int p){
         int stripe = blockDim.x*gridDim.x;
         int head = (blockIdx.x*blockDim.x + threadIdx.x);
         for(int i = head ; i < m ; i+=stripe){
-	    ind[i].blockInd_x = blockIdx.x;
-	    ind[i].threadInd_x = threadIdx.x;
-	    ind[i].head = head;
-	    ind[i].stripe = stripe;
+            ind[i].blockInd_x = blockIdx.x;
+            ind[i].threadInd_x = threadIdx.x;
+            ind[i].head = head;
+            ind[i].stripe = stripe;
             for(int k = 0 ; k < p ; ++k){
                 for(int j = 0 ; j < n ; ++j)
                 {
                     new_mat[i*p+k] += m1[i*n+j]*m2[j*p+k];
-                } 
+                }
+                new_mat[i*p+k] += bias[i]; 
             }
         }
 }
@@ -48,15 +49,15 @@ void generateRandomMatrix(Matrix* matrix){
     int cols = matrix->cols_;
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
-            int value = (double)rand()/(double)RAND_MAX *10;
+            int value = (float)rand()/(float)RAND_MAX *10;
             matrix->mat[i*cols+j] = value;
         }
     }
 }
 
-void generateRandomVector(double* vec, int size){
+void generateRandomVector(float* vec, int size){
     for(int i = 0 ; i < size ; i++){
-        int value = (double)rand()/(double)RAND_MAX *10;
+        int value = (float)rand()/(float)RAND_MAX *10;
         vec[i] = value;
     }
 }
@@ -67,7 +68,7 @@ void MatrixFree(Matrix* matrix){
 }
 
 void allocSpace(Matrix* matrix){
-    matrix->mat = (double*)malloc(matrix->rows_ * matrix->cols_ *sizeof(double*));
+    matrix->mat = (float*)malloc(matrix->rows_ * matrix->cols_ *sizeof(float*));
 }
 
 void dumpMatrix(Matrix* matrix){
@@ -75,15 +76,15 @@ void dumpMatrix(Matrix* matrix){
     int cols = matrix->cols_;
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
-            printf("%lf ", matrix->mat[i*cols+j]);
+            printf("%f ", matrix->mat[i*cols+j]);
         }
         printf("\n");
     }
 }
 
-void dumpVector(double* vec, int size){
+void dumpVector(float* vec, int size){
     for(int i = 0 ; i < size ; i ++){
-        printf("%lf ", vec[i]);
+        printf("%f ", vec[i]);
     }
     printf("\n");
 }
@@ -92,31 +93,31 @@ void dumpIndex(IndexSave* Ind, Matrix* new_mat){
     for(int i = 0 ; i < new_mat->rows_ ; ++i ){
 	printf("%d : blockInd_x=%d, threadInd_x=%d, head=%d, stripe=%d\n", i, Ind[i].blockInd_x, Ind[i].threadInd_x, Ind[i].head, Ind[i].stripe);
 	printf("    GPU result :");
-	for(int j = 0 ; j < new_mat->cols_ ; ++j){
-	    printf("%lf ", new_mat->mat[i*new_mat->cols_ + j]);
-	}
+	    for(int j = 0 ; j < new_mat->cols_ ; ++j){
+	        printf("%f ", new_mat->mat[i*new_mat->cols_ + j]);
+	    }
 	printf("\n");
     }
 }
 
-double innerProduct(double *vec1, double *vec2, int n){
-    double ret = 0 ;
+float innerProduct(float *vec1, float *vec2, int n){
+    float ret = 0 ;
     for(int i = 0 ; i < n ; ++n){
         ret += vec1[i] * vec2[i];
     }
     return ret;
 }
 
-double* addVector(double *vec1, double *vec2, int n){
-    double* new_vec = (double*)malloc(n * sizeof(double));
+float* addVector(float *vec1, float *vec2, int n){
+    float* new_vec = (float*)malloc(n * sizeof(float));
     for(int i = 0 ; i < n ; ++n){
         new_vec[i] = vec1[i] + vec2[i];
     }
     return new_vec;
 }
 
-double* substractVector(double *vec1, double *vec2, int n){
-    double* new_vec = (double*)malloc(n * sizeof(double));
+float* substractVector(float *vec1, float *vec2, int n){
+    float* new_vec = (float*)malloc(n * sizeof(float));
     for(int i = 0 ; i < n ; ++n){
         new_vec[i] = vec1[i] - vec2[i];
     }
@@ -136,7 +137,7 @@ Matrix* transpose(Matrix* matrix){
     return new_mat;
 }
 
-Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double* bias){
+Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, float* bias){
 
     if(matrix1->cols_ != matrix2->rows_){
         printf("matrix1 cols doesn't match matrix2 rows\n");
@@ -156,19 +157,19 @@ Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double
     cudaEventCreate (&stop);
 
     // allocate memory space on device
-    double *device_new, *device_matrix1, *device_matrix2, *device_bias;
+    float *device_new, *device_matrix1, *device_matrix2, *device_bias;
 
-    cudaMalloc((void **)&device_new, sizeof(double) * new_mat->rows_ * new_mat->cols_);
-    cudaMalloc((void **)&device_matrix1, sizeof(double) * matrix1->rows_ * matrix1->cols_);
-    cudaMalloc((void **)&device_matrix2, sizeof(double) * matrix2->rows_ * matrix2->cols_);
-    cudaMalloc((void **)&device_bias, sizeof(double) * new_mat->rows_);
+    cudaMalloc((void **)&device_new, sizeof(float) * new_mat->rows_ * new_mat->cols_);
+    cudaMalloc((void **)&device_matrix1, sizeof(float) * matrix1->rows_ * matrix1->cols_);
+    cudaMalloc((void **)&device_matrix2, sizeof(float) * matrix2->rows_ * matrix2->cols_);
+    cudaMalloc((void **)&device_bias, sizeof(float) * new_mat->rows_);
     cudaMalloc((void **)&dInd, sizeof(IndexSave) * new_mat->rows_);
 
     // copy data from host to device
-    // cudaMemcpy(device_new, new_mat->mat, sizeof(double)* new_mat->cols_ * new_mat->rows_, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_matrix1, matrix1->mat, sizeof(double)* matrix1->cols_ * matrix1->rows_, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_matrix2, matrix2->mat, sizeof(double)* matrix2->cols_ * matrix2->rows_, cudaMemcpyHostToDevice);
-    cudaMemcpy(device_bias, bias, sizeof(double) * matrix1->rows_, cudaMemcpyHostToDevice);
+    // cudaMemcpy(device_new, new_mat->mat, sizeof(float)* new_mat->cols_ * new_mat->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_matrix1, matrix1->mat, sizeof(float)* matrix1->cols_ * matrix1->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_matrix2, matrix2->mat, sizeof(float)* matrix2->cols_ * matrix2->rows_, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_bias, bias, sizeof(float) * matrix1->rows_, cudaMemcpyHostToDevice);
     // start timer
     cudaEventRecord(start, 0);
 
@@ -176,13 +177,13 @@ Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double
     dim3 dimGrid(1);
     dim3 dimBlock(2);
     
-    cudaMatrixMuladdBias<<<dimGrid, dimBlock>>>(device_new, device_matrix1, device_matrix2, bias, dInd, matrix1->rows_, matrix1->cols_, 
+    cudaMatrixMuladdBias<<<dimGrid, dimBlock>>>(device_new, device_matrix1, device_matrix2, device_bias, dInd, matrix1->rows_, matrix1->cols_, 
     		    matrix2->cols_);
     // stop timer
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     // copy result back to host
-    cudaMemcpy(new_mat->mat, device_new, sizeof(double)* new_mat->rows_ * new_mat->cols_, cudaMemcpyDeviceToHost);
+    cudaMemcpy(new_mat->mat, device_new, sizeof(float)* new_mat->rows_ * new_mat->cols_, cudaMemcpyDeviceToHost);
     cudaMemcpy(Ind, dInd, sizeof(IndexSave) * new_mat->rows_, cudaMemcpyDeviceToHost);
 
     dumpIndex(Ind, new_mat);

@@ -8,28 +8,28 @@ all: $(TARGET)
 vm: cpu_vm gpu_vm
 
 cpu_version: main.o matrix_cpu.o 
-	$(CC) -o cpu_version main.o matrix_cpu.o -lm
+	$(CC) -o cpu_version main.o matrix_cpu.o -lm -std=c99
 
 gpu_version: main_gpu.o matrix_gpu.o
 	$(NVCC) -o gpu_version main_gpu.o matrix_gpu.o
 
 main.o: main.c
-	$(CC) -c main.c -I .
+	$(CC) -c main.c -I . -std=c99
 
 main_gpu.o: main_gpu.cu
 	$(NVCC) -c main_gpu.cu -I .
 
 matrix_cpu.o: matrix_cpu.c
-	$(CC) -c matrix_cpu.c -I .
+	$(CC) -c matrix_cpu.c -I . -std=c99
 
 matrix_gpu.o: matrix_gpu.cu
 	$(NVCC) -c matrix_gpu.cu -I .
 
 cpu_vm: main.o matrix_cpu.o
-	$(CC) -o cpu_vm main.o matrix_cpu.o -lm
+	$(CC) -o cpu_vm main.o matrix_cpu.o -lm -std=c99
 
 gpu_vm: main_gpu_vm.o matrix_gpu_vm.o
-	$(NVCC) -o main_gpu.o matrix_gpu.o gpu_vm $(LINKER_DIR) $(OCELOT)
+	$(CC) -o gpu_vm main_gpu_vm.o matrix_gpu_vm.o $(LINKER_DIR) $(OCELOT)
 
 main_gpu_vm.o: main_gpu.cu
 	$(NVCC) -c main_gpu.cu $(CUDA_ARCH) -I . -o main_gpu_vm.o

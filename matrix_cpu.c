@@ -28,16 +28,16 @@ void generateRandomMatrix(Matrix* matrix){
     int cols = matrix->cols_;
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
-            // int value = (double)rand()/(double)RAND_MAX *10;
-            matrix->mat[i*cols+j] = (double)rand()/(double)RAND_MAX;
+            // int value = (float)rand()/(float)RAND_MAX *10;
+            matrix->mat[i*cols+j] = (float)rand()/(float)RAND_MAX;
         }
     }
 }
 
-void generateRandomVector(double* vec, int size){
+void generateRandomVector(float* vec, int size){
     for(int i = 0 ; i < size ; i++){
-        // int value = (double)rand()/(double)RAND_MAX *10;
-        vec[i] = (double)rand()/(double)RAND_MAX;
+        // int value = (float)rand()/(float)RAND_MAX *10;
+        vec[i] = (float)rand()/(float)RAND_MAX;
     }
 }
 
@@ -47,7 +47,7 @@ void MatrixFree(Matrix* matrix){
 }
 
 void allocSpace(Matrix* matrix){
-    matrix->mat = (double*)malloc(matrix->rows_ * matrix->cols_ *sizeof(double*));
+    matrix->mat = (float*)malloc(matrix->rows_ * matrix->cols_ *sizeof(float*));
 }
 
 void dumpMatrix(Matrix* matrix){
@@ -55,36 +55,36 @@ void dumpMatrix(Matrix* matrix){
     int cols = matrix->cols_;
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
-            printf("%lf ", matrix->mat[i*cols+j]);
+            printf("%f ", matrix->mat[i*cols+j]);
         }
         printf("\n");
     }
 }
 
-void dumpVector(double* vec, int size){
+void dumpVector(float* vec, int size){
     for(int i = 0 ; i < size ; i ++){
-        printf("%lf ", vec[i]);
+        printf("%f ", vec[i]);
     }
     printf("\n");
 }
 
-double innerProduct(double *vec1, double *vec2, int n){
-    double ret = 0 ;
+float innerProduct(float *vec1, float *vec2, int n){
+    float ret = 0 ;
     for(int i = 0 ; i < n ; ++n){
         ret += vec1[i] * vec2[i];
     }
     return ret;
 }
 
-double* addVector(double *vec1, double *vec2, int n){
-    double* new_vec = (double*)malloc(n * sizeof(double));
+float* addVector(float *vec1, float *vec2, int n){
+    float* new_vec = (float*)malloc(n * sizeof(float));
     for(int i = 0 ; i < n ; ++n){
         new_vec[i] = vec1[i] + vec2[i];
     }
 }
 
-double* substractVector(double *vec1, double *vec2, int n){
-    double* new_vec = (double*)malloc(n * sizeof(double));
+float* substractVector(float *vec1, float *vec2, int n){
+    float* new_vec = (float*)malloc(n * sizeof(float));
     for(int i = 0 ; i < n ; ++n){
         new_vec[i] = vec1[i] - vec2[i];
     }
@@ -103,7 +103,7 @@ Matrix* transpose(Matrix* matrix){
     return new_mat;
 }
 
-Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, double* bias){
+Matrix* matrixMultiplyAddBiasActivation(Matrix* matrix1, Matrix* matrix2, float* bias){
 
     if(matrix1->cols_ != matrix2->rows_){
         printf("matrix1 cols doesn't match matrix2 rows\n");
