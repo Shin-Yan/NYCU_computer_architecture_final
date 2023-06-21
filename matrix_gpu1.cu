@@ -22,6 +22,7 @@ __global__ void cudaMatrixMuladdBias(type_m* new_mat, type_m* m1, type_m* m2, ty
             ind[i].threadInd_x = threadIdx.x;
             ind[i].head = head;
             ind[i].stripe = stripe;
+            // m = 4, p = 32, i = 31
             int idx1 = i / p;
             int idx2 = i % p;
             for(int j = 0 ; j < n ; ++j)
@@ -29,6 +30,8 @@ __global__ void cudaMatrixMuladdBias(type_m* new_mat, type_m* m1, type_m* m2, ty
                 new_mat[i] += m1[idx1*n+j]*m2[idx2*n+j];
             }
             new_mat[i] += bias[idx1]; 
+
+            // sigmoid: activation function
             new_mat[i] = 1.0 / (1.0 + exp(-new_mat[i]));
         }
 }
@@ -79,15 +82,15 @@ void generateRandomMatrix(Matrix* matrix){
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
             // int value = (float)rand()/(float)RAND_MAX *10;
-            matrix->mat[i*cols+j] = (float)rand()/(float)RAND_MAX;
+            matrix->mat[i*cols+j] = (type_m)rand()/(type_m)RAND_MAX;
         }
     }
 }
 
 void generateRandomVector(type_m* vec, int size){
     for(int i = 0 ; i < size ; i++){
-        int value = (type_m)rand()/(type_m)RAND_MAX *10;
-        vec[i] = value;
+        // int value = (type_m)rand()/(type_m)RAND_MAX *10;
+        vec[i] = (type_m)rand()/(type_m)RAND_MAX;
     }
 }
 
@@ -193,6 +196,7 @@ Matrix* matrixMultiplyAddBias_gpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
     cudaMalloc((void **)&device_bias, sizeof(type_m) * new_mat->rows_);
     cudaMalloc((void **)&dInd, sizeof(IndexSave) * new_mat->rows_ * new_mat->cols_);
 
+    // m*n , n*p
     // copy data from host to device
     cudaMemcpy(device_new, new_mat->mat, sizeof(type_m)* new_mat->cols_ * new_mat->rows_, cudaMemcpyHostToDevice);
     cudaMemcpy(device_matrix1, matrix1->mat, sizeof(type_m)* matrix1->cols_ * matrix1->rows_, cudaMemcpyHostToDevice);
@@ -253,6 +257,9 @@ Matrix* matrixMultiplyAddBias_cpu(Matrix* matrix1, Matrix* matrix2, type_m* bias
                 new_mat->mat[i*cols+j] += matrix1->mat[i*matrix1->cols_+k]*matrix2_t->mat[j*matrix2_t->cols_+k];
             }
             new_mat->mat[i*cols+j] += bias[i];
+
+            // activation function 有很多選項，這裡選擇sigmoid
+            // sigmoid function
             new_mat->mat[i*cols+j] = 1.0 / (1.0 + exp(-new_mat->mat[i*cols+j]));
         }
     }

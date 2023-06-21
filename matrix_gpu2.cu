@@ -78,15 +78,15 @@ void generateRandomMatrix(Matrix* matrix){
     for(int i = 0 ; i < rows ; ++i){
         for(int j = 0 ; j < cols ; ++j){
             // int value = (float)rand()/(float)RAND_MAX *10;
-            matrix->mat[i*cols+j] = (float)rand()/(float)RAND_MAX;
+            matrix->mat[i*cols+j] = (type_m)rand()/(type_m)RAND_MAX;
         }
     }
 }
 
 void generateRandomVector(type_m* vec, int size){
     for(int i = 0 ; i < size ; i++){
-        int value = (type_m)rand()/(type_m)RAND_MAX *10;
-        vec[i] = value;
+        // int value = (type_m)rand()/(type_m)RAND_MAX *10;
+        vec[i] = (type_m)rand()/(type_m)RAND_MAX;
     }
 }
 
